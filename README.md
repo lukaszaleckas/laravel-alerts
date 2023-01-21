@@ -111,5 +111,26 @@ classes `getAlertLevel`and `getLogChannels` methods respectively.
 
 ## Available alerts
 
-As of writing this documentation, this package contains `TableSizeAlert`
-which can be used to check if table's row count did not exceed configured threshold.
+This package contains some predefined alerts that you can use.
+They are in the `LaravelAlerts\Alerts` namespace.
+
+### `QueueSizeAlert`
+
+Alert is triggered if queue size, on a particular connection, exceeds
+threshold.
+
+#### Configuration
+
+* `connection` (required) (string) - Queue connection name
+* `queue` (required) (string) - Queue name
+* `threshold` (required) (int) - Queue size (job count) threshold
+
+### `TableSizeAlert`
+
+Alert is triggered if database table size exceeds threshold.
+
+#### Configuration
+
+* `connection` (required) (string) - Database connection name
+* `table_name` (required) (string) - Table name
+* `threshold` (required) (int) - Table size (row count) threshold
