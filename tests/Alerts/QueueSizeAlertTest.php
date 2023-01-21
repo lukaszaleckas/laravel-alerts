@@ -3,18 +3,23 @@
 namespace LaravelAlerts\Tests\Alerts;
 
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\DB;
-use LaravelAlerts\Alerts\TableSizeAlert;
+use Illuminate\Queue\QueueManager;
+use LaravelAlerts\Alerts\QueueSizeAlert;
 use LaravelAlerts\Tests\Contracts\AbstractTest;
 use LaravelAlerts\Tests\Traits\AlertTestTrait;
+use Mockery;
+use Mockery\MockInterface;
 
-class TableSizeAlertTest extends AbstractTest
+class QueueSizeAlertTest extends AbstractTest
 {
     use WithFaker;
     use AlertTestTrait;
 
-    /** @var TableSizeAlert */
-    private TableSizeAlert $alert;
+    /** @var QueueSizeAlert */
+    private QueueSizeAlert $alert;
+
+    /** @var MockInterface */
+    private MockInterface $queueManagerMock;
 
     /**
      * @return void
@@ -23,31 +28,41 @@ class TableSizeAlertTest extends AbstractTest
     {
         parent::setUp();
 
-        $this->alert = new TableSizeAlert();
+        $this->queueManagerMock = Mockery::mock(QueueManager::class);
+        $this->alert            = new QueueSizeAlert(
+            $this->queueManagerMock
+        );
     }
 
     /**
      * @dataProvider alertCheckTestDataProvider
      *
      * @param int  $threshold
-     * @param int  $count
+     * @param int  $size
      * @param bool $shouldTrigger
      * @return void
      */
-    public function testRunsDatabaseCheck(
+    public function testRunsQueueSizeCheck(
         int $threshold,
-        int $count,
+        int $size,
         bool $shouldTrigger
     ): void {
         $this->alert->configure([
-            TableSizeAlert::CONFIG_THRESHOLD  => $threshold,
-            TableSizeAlert::CONFIG_CONNECTION => $connection = $this->faker->word,
-            TableSizeAlert::CONFIG_TABLE_NAME => $tableName  = $this->faker->word,
+            QueueSizeAlert::CONFIG_THRESHOLD  => $threshold,
+            QueueSizeAlert::CONFIG_CONNECTION => $connection = $this->faker->word,
+            QueueSizeAlert::CONFIG_QUEUE      => $queue      = $this->faker->word,
         ]);
 
-        DB::shouldReceive('connection')->once()->with($connection)->andReturnSelf();
-        DB::shouldReceive('table')->once()->with($tableName)->andReturnSelf();
-        DB::shouldReceive('count')->once()->andReturn($count);
+        $this->queueManagerMock
+            ->shouldReceive('connection')
+            ->once()
+            ->with($connection)
+            ->andReturnSelf();
+
+        $this->queueManagerMock
+            ->shouldReceive('size')
+            ->once()
+            ->andReturn($size);
 
         $this->mockTriggeredAlertLog($shouldTrigger);
 
